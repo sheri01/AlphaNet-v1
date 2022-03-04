@@ -51,11 +51,11 @@ def ts_corr(x, d, stride=10):
         feature = torch.from_numpy(feature).to(torch.float32)
         return feature
     corr = torch.zeros(size = (1,1,36,3))#经过自定义网络层的输出大小，可修改
-    for i in range(0,bs-1):
+    for i in range(0,x.shape[0]):
         x1 = t_corr(x[i,0,:,:])#将样本拆分
         x1 = x1.reshape(1,1,x1.shape[0],x1.shape[1])#reshape成可拼接的形状
         corr = torch.vstack((corr,x1))
-    return corr
+    return corr[1:,:,:,:]
 
 # 过去 d 天 X 值构成的时序数列和 Y 值构成的时序数列的协方差
 def ts_cov(x, d, stride=10):
@@ -73,11 +73,11 @@ def ts_cov(x, d, stride=10):
         covxy = torch.from_numpy(covxy).to(torch.float32)
         return covxy
     cov = torch.zeros(size = (1,1,36,3))#经过自定义网络层的输出大小，可修改
-    for i in range(0,bs-1):
+    for i in range(0,x.shape[0]):
         x1 = t_cov(x[i,0,:,:])#将样本拆分
         x1 = x1.reshape(1,1,x1.shape[0],x1.shape[1])#reshape成可拼接的形状
         cov = torch.vstack((cov,x1))
-    return cov
+    return cov[1:,:,:,:]
 
 # 过去 d 天 X 值构成的时序数列的标准差
 def ts_stddev(x, d, stride=10):
@@ -95,11 +95,11 @@ def ts_stddev(x, d, stride=10):
         stdx = torch.from_numpy(stdx).to(torch.float32)
         return stdx
     stddev = torch.zeros(size = (1,1,9,3))#经过自定义网络层的输出大小，可修改
-    for i in range(0,bs-1):
+    for i in range(0,x.shape[0]):
         x1 = t_stddev(x[i,0,:,:])#将样本拆分
         x1 = x1.reshape(1,1,x1.shape[0],x1.shape[1])#reshape成可拼接的形状
         stddev = torch.vstack((stddev,x1))
-    return stddev
+    return stddev[1:,:,:,:]
 
 # 过去 d 天 X 值构成的时序数列的平均值除以标准差
 def ts_zscore(x, d, stride=10):
@@ -120,11 +120,11 @@ def ts_zscore(x, d, stride=10):
         z_score = torch.from_numpy(z_score).to(torch.float32)
         return z_score
     zs = torch.zeros(size = (1,1,9,3))#经过自定义网络层的输出大小，可修改
-    for i in range(0,bs-1):
+    for i in range(0,x.shape[0]):
         x1 = t_zscore(x[i,0,:,:])#将样本拆分
         x1 = x1.reshape(1,1,x1.shape[0],x1.shape[1])#reshape成可拼接的形状
         zs = torch.vstack((zs,x1))
-    return zs
+    return zs[1:,:,:,:]
 
 
 # d 天以前的 X 值
@@ -148,11 +148,11 @@ def ts_return(x, d, stride=10):
         res = torch.from_numpy(res).to(torch.float32)
         return res
     re = torch.zeros(size = (1,1,9,3))#经过自定义网络层的输出大小，可修改
-    for i in range(0,bs-1):
+    for i in range(0,x.shape[0]):
         x1 = t_return(x[i,0,:,:])#将样本拆分
         x1 = x1.reshape(1,1,x1.shape[0],x1.shape[1])#reshape成可拼接的形状
         re = torch.vstack((re,x1))
-    return re
+    return re[1:,:,:,:]
 
 # 过去 d 天 X 值构成的时序数列的加权平均值
 # 权数为 d, d – 1, …, 1(权数之和应为 1，需进行归一化处理)，其中离现在越近的日子权数越大
@@ -174,11 +174,11 @@ def ts_decaylinear(x, d, stride=10):
         dl = torch.from_numpy(dl).to(torch.float32)
         return dl
     de = torch.zeros(size = (1,1,9,3))#经过自定义网络层的输出大小，可修改
-    for i in range(0,bs-1):
+    for i in range(0,x.shape[0]):
         x1 = t_decaylinear(x[i,0,:,:])#将样本拆分
         x1 = x1.reshape(1,1,x1.shape[0],x1.shape[1])#reshape成可拼接的形状
         de = torch.vstack((de,x1))
-    return de
+    return de[1:,:,:,:]
 
 def cat2(x,y):
     #x第三维度比y长，将y补充为与x一样大小，补充元素用0填
