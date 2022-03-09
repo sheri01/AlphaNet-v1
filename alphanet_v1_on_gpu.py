@@ -268,7 +268,7 @@ alphanet = nn.Sequential(
 # import hiddenlayer as h
 # vis_graph = h.build_graph(alphanet, torch.zeros([bs ,1, 9, 38]))   # 获取绘制图像的对象
 # vis_graph.theme = h.graph.THEMES["blue"].copy()     # 指定主题颜色
-# vis_graph.save("C://Users//30601//Desktop//demo1.png")   # 保存图像的路径
+# vis_graph.save("demo1.png")   # 保存图像的路径
 
 #打印数据在 alphanet 和 branch1、2 每一层输出的形状
 # X = torch.rand(size=(64, 1, 9, 30), dtype=torch.float32)
