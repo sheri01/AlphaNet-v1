@@ -52,18 +52,19 @@ train_loader = DataLoader(
 def init_weights(m):
     if type(m) == nn.Linear:
         nn.init.trunc_normal_(m.weight)
-device = d2l.try_gpu()
-# RMSProp，0.0001
+#cuda：0
+device = d2l.try_gpu() 
 
 def train_net(alphanet,train_loader,test_data_x , test_data_y,lr = 0.001,times = 1):
+    # RMSProp，0.0001
     alphanet.to(device)
     optimizer = torch.optim.RMSprop(alphanet.parameters(),lr = lr)
     loss_func = torch.nn.MSELoss()
     test_data_x , test_data_y = test_data_x.to(device), test_data_y.to(device)    
     print('training on', device)
-    test_mse0 = 1
+    test_mse0 = 1 
     for epoch in range(200):
-        if epoch > 120: 
+        if epoch > 120: #减小学习率
             optimizer = torch.optim.RMSprop(alphanet.parameters(),lr = 0.0001)  
          # print("epoch:", epoch)
          # 每一轮都遍历一遍数据加载器 
@@ -81,7 +82,7 @@ def train_net(alphanet,train_loader,test_data_x , test_data_y,lr = 0.001,times =
             test_mse = loss_func(test_predict,test_data_y)            
          # 控制台输出一下
             print("epoch:{}, train_mse:{:.2},test_mse:{:.2}".format(epoch + 1, loss.item(), test_mse.item()))
-            if test_mse < test_mse0:
+            if test_mse < test_mse0: #验证集误差小于上一轮epoch，则保存模型
                 test_mse0 = test_mse
                 print('save model')
                 torch.save(alphanet.state_dict(), 
