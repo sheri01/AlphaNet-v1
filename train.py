@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Mar  6 22:30:49 2022
 
-@author: 30601
-"""
 import numpy as np
 import torch
 from torch.utils.data import TensorDataset
