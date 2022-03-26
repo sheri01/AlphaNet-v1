@@ -1,27 +1,24 @@
 import torch
 from torch import Tensor
 from torch import nn
-from scipy.stats import pearsonr
 
-def cor(aPic:Tensor, d, col):
+def cor(x:Tensor):
     """
     特征维度上的相关系数
-    aPic：一张图片
-    d：窗口长度
-    col：起始日期
+    x：一个卷积窗口
     """
-    length = aPic.shape[0]
+    length = x.shape[0]
     temp = torch.zeros(size=[length * (length - 1) // 2])
     index = 0
     for row1 in range(length):
         for row2 in range(row1 + 1, length):
-            temp[index] = pearsonr(aPic[row1, col:col + d],aPic[row2, col:col + d])[0]
+            temp[index] = torch.corrcoef(x)[row1,row2]
             index += 1
-    return temp
+    return torch.where(torch.isnan(temp), torch.full_like(temp, 0), temp)
 
 def ts_corr(x: Tensor, d, stride=10):
     """
-    x:输入的股票数据
+    x:输入的股票数据图片
     d:窗口长度
     stride:时间间隔
     """
@@ -35,7 +32,7 @@ def ts_corr(x: Tensor, d, stride=10):
         # 时间维度求相关系数
         index = 0
         for col in range(0, width - d + 1, stride):
-            feature[:, index] = cor(aPic, d, col).ravel()
+            feature[:, index] = cor(aPic[:,col:col + stride])
             index += 1
         return feature
     
@@ -58,28 +55,18 @@ def ts_corr(x: Tensor, d, stride=10):
 
 # 特征维度求协方差
 # col为起始列数
-def torch_cov(x1, x2):
-    """
-    计算x1，x2的协方差
-    """
-    x1 = x1- torch.mean(x1)
-    x2 = x2- torch.mean(x2)
-    cov_xy = torch.dot(x1.T, x2) / (x1.shape[0]-1)
-    return cov_xy
 
-def covx(aPic, d, col):
+def covx(x):
     """
     特征维度上的协方差
-    aPic：一张图片
-    d：窗口长度
-    col：起始日期
+    x：一个“卷积”窗口
     """
-    length = aPic.shape[0]
+    length = x.shape[0]
     temp = torch.zeros(size=[length * (length - 1) // 2])
     index = 0
     for row1 in range(length):
         for row2 in range(row1 + 1, length):
-            temp[index] = torch_cov(aPic[row1, col:col + d],aPic[row2, col:col + d])
+            temp[index] = torch.cov(x)[row1,row2]
             index += 1
     return temp
 
@@ -99,7 +86,7 @@ def ts_cov(x:Tensor, d, stride=10):
         # 时间维度求相关系数
         index = 0
         for col in range(0, width - d + 1, stride):
-            covxy[:, index] = covx(aPic, d, col).ravel()
+            covxy[:, index] = covx(aPic[:,col:col + stride])
             index += 1
         return covxy
 
