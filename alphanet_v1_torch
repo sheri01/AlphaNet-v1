@@ -190,53 +190,63 @@ def ts_zscore(x:Tensor, d, stride=10):
     return zs[1:, :, :, :]
 
 # d 天以前的 X 值
-def delay(feature, d):
-    """
-    feature:输入的特征
-    d:窗口长度
-    return:该特征d天前的值
-    """
-    return feature[-(d + 1)]
+def delay(x:Tensor, currentDay, d):
+    """
+    x:(N, 1, 9, 30)
+    d:窗口长度
+    return:返回d天前的X
+    """
+    tempX = torch.zeros((9,1)) # feature, 天数
+    for i in range(x.shape[0]):
+        tempX = torch.cat((tempX, torch.unsqueeze(x[i,0,:,0],dim=1)), dim=1)
+    catX = torch.hstack((tempX, x[-1,0,:,1:]))[:,1:]
+    if currentDay < d:
+        return catX[:,0]
+    else:
+        return catX[:,currentDay-d]
 
 # (X - delay(X, d))/delay(X, d)-1
 def ts_return(x:Tensor, d, stride=10):
-    """
-    x:输入的股票数据
-    d:窗口长度
-    stride:时间间隔
-    return:(X - delay(X, d))/delay(X, d)-1, delay(X,d)为d天前X的值
-    """
-    def t_return(aPic:Tensor):
-        """
-        输入为一张图片
-        """
-        length = aPic.shape[0]
-        width = aPic.shape[1]
-        res = torch.zeros([length, (width - d) // stride + 1])
-        # col为起始列数
-        index = 0
-        for col in range(0, width - d + 1, stride):
-            for row in range(0, length):
-                res[row, index] = torch.sum(aPic[row, col:col + d])
-            index += 1
-        return res
+    """
+    x:输入的股票数据
+    d:窗口长度
+    stride:时间间隔
+    return:(X - delay(X, d))/delay(X, d)-1, delay(X,d)为d天前X的值
+    """
+    def t_return(aPic:Tensor, num, x=x):
+        """
+        num: 第几张图片
+        输入为一张图片
+        x为全部图片
+        """
+        length = aPic.shape[0]
+        width = aPic.shape[1]
+        res = torch.zeros([length, (width - d) // stride + 1])
+        # col为起始列数
+        index = 0
+        for col in range(0, width - d + 1, stride):
+            currentDay = num + col
+            de = delay(x=x, currentDay=currentDay, d=d)
+            res[:, index] = (aPic[:, col] - de)/de-1
+            index += 1
+        return res
 
-    try:
-        if x.ndim != 4:
-            raise IndexError
-        elif x.shape[1] != 1 or x.shape[2] != 9 or x.shape[3] != 30:
-            raise RuntimeError
-    except IndexError as e1:
-        print(repr(e1), ":请输入4维张量([样本数, 1, 9, 30])")
-    except RuntimeError as e2:
-        print(repr(e2), ":输入张量形状不正确([样本数, 1, 9, 30])")
+    try:
+        if x.ndim != 4:
+            raise IndexError
+        elif x.shape[1] != 1 or x.shape[2] != 9 or x.shape[3] != 30:
+            raise RuntimeError
+    except IndexError as e1:
+        print(repr(e1), ":请输入4维张量([样本数, 1, 9, 30])")
+    except RuntimeError as e2:
+        print(repr(e2), ":输入张量形状不正确([样本数, 1, 9, 30])")
 
-    re = torch.zeros(size=(1, 1, 9, 3))  # 经过自定义网络层的输出大小，要修改
-    for i in range(0, x.shape[0]):
-        x1 = t_return(x[i, 0, :, :])  # 将样本拆分
-        x1 = x1.reshape(1, 1, x1.shape[0], x1.shape[1])  # reshape成可拼接的形状
-        re = torch.vstack((re, x1))
-    return re[1:, :, :, :]
+    re = torch.zeros(size=(1, 1, 9, 3))  # 经过自定义网络层的输出大小，要修改
+    for i in range(0, x.shape[0]):
+        x1 = t_return(x[i, 0, :, :], num=i)  # 将样本拆分
+        x1 = x1.reshape(1, 1, x1.shape[0], x1.shape[1])  # reshape成可拼接的形状
+        re = torch.vstack((re, x1))
+    return re[1:, :, :, :]
 
 # 过去 d 天 X 值构成的时序数列的加权平均值
 # 权数为 d, d – 1, …, 1(权数之和应为 1，需进行归一化处理)，其中离现在越近的日子权数越大
