@@ -8,7 +8,7 @@ def cor(x:Tensor):
     x：一个卷积窗口
     """
     length = x.shape[0]
-    temp = torch.zeros(size=[length * (length - 1) // 2])
+    temp = torch.zeros(size=[length * (length - 1) // 2]).cuda()
     index = 0
     for row1 in range(length):
         for row2 in range(row1 + 1, length):
@@ -28,7 +28,7 @@ def ts_corr(x: Tensor, d, stride=10):
         """
         length = aPic.shape[0]
         width = aPic.shape[1]
-        feature = torch.zeros(size=[length * (length - 1) // 2, (width - d) // stride + 1])
+        feature = torch.zeros(size=[length * (length - 1) // 2, (width - d) // stride + 1]).cuda()
         # 时间维度求相关系数
         index = 0
         for col in range(0, width - d + 1, stride):
@@ -46,7 +46,7 @@ def ts_corr(x: Tensor, d, stride=10):
     except RuntimeError as e2:
         print(repr(e2), ":输入张量形状不正确([样本数, 1, 9, 30])")
 
-    corr = torch.zeros(size=(1, 1, 36, 3))  # 经过自定义网络层的输出大小，要修改
+    corr = torch.zeros(size=(1, 1, 36, 3)).cuda()  # 经过自定义网络层的输出大小，可修改
     for i in range(0, x.shape[0]):
         x1 = t_corr(x[i, 0, :, :])  # 对一个样本做特征提取
         x1 = x1.reshape(1, 1, x1.shape[0], x1.shape[1])  # reshape成可拼接的形状
@@ -62,7 +62,7 @@ def covx(x):
     x：一个“卷积”窗口
     """
     length = x.shape[0]
-    temp = torch.zeros(size=[length * (length - 1) // 2])
+    temp = torch.zeros(size=[length * (length - 1) // 2]).cuda()
     index = 0
     for row1 in range(length):
         for row2 in range(row1 + 1, length):
@@ -82,7 +82,7 @@ def ts_cov(x:Tensor, d, stride=10):
         """
         length = aPic.shape[0]
         width = aPic.shape[1]
-        covxy = torch.zeros(size=[length * (length - 1) // 2, (width - d) // stride + 1])
+        covxy = torch.zeros(size=[length * (length - 1) // 2, (width - d) // stride + 1]).cuda()
         # 时间维度求相关系数
         index = 0
         for col in range(0, width - d + 1, stride):
@@ -100,7 +100,7 @@ def ts_cov(x:Tensor, d, stride=10):
     except RuntimeError as e2:
         print(repr(e2), ":输入张量形状不正确([样本数, 1, 9, 30])")
 
-    cov = torch.zeros(size=(1, 1, 36, 3))  # 经过自定义网络层的输出大小，要修改
+    cov = torch.zeros(size=(1, 1, 36, 3)).cuda()  # 经过自定义网络层的输出大小，要修改
     for i in range(0, x.shape[0]):
         x1 = t_cov(x[i, 0, :, :])  # 将样本拆分
         x1 = x1.reshape(1, 1, x1.shape[0], x1.shape[1])  # reshape成可拼接的形状
@@ -120,7 +120,7 @@ def ts_stddev(x:Tensor, d, stride=10):
         """
         length = aPic.shape[0]
         width = aPic.shape[1]
-        stdx = torch.zeros([length, (width - d) // stride + 1])
+        stdx = torch.zeros([length, (width - d) // stride + 1]).cuda()
         # col为起始列数
         index = 0
         for col in range(0, width - d + 1, stride):
@@ -139,7 +139,7 @@ def ts_stddev(x:Tensor, d, stride=10):
     except RuntimeError as e2:
         print(repr(e2), ":输入张量形状不正确([样本数, 1, 9, 30])")
 
-    stddev = torch.zeros(size=(1, 1, 9, 3))  # 经过自定义网络层的输出大小，要修改
+    stddev = torch.zeros(size=(1, 1, 9, 3)).cuda()  # 经过自定义网络层的输出大小，要修改
     for i in range(0, x.shape[0]):
         x1 = t_stddev(x[i, 0, :, :])  # 将样本拆分
         x1 = x1.reshape(1, 1, x1.shape[0], x1.shape[1])  # reshape成可拼接的形状
@@ -159,7 +159,7 @@ def ts_zscore(x:Tensor, d, stride=10):
         """
         length = aPic.shape[0]
         width = aPic.shape[1]
-        z_score = torch.zeros([length, (width - d) // stride + 1])
+        z_score = torch.zeros([length, (width - d) // stride + 1]).cuda()
         # col为起始列数
         index = 0
         for col in range(0, width - d + 1, stride):
@@ -167,8 +167,7 @@ def ts_zscore(x:Tensor, d, stride=10):
                 mean = torch.mean(aPic[row, col:col + d])
                 stdx = torch.std(aPic[row, col:col + d])
                 # 加上10e-8避免除0
-                stdx = 10e-8
-                z_score[row, index] = mean / stdx
+                z_score[row, index] = mean / (stdx + 10e-8)
             index += 1
         return z_score
 
@@ -182,71 +181,52 @@ def ts_zscore(x:Tensor, d, stride=10):
     except RuntimeError as e2:
         print(repr(e2), ":输入张量形状不正确([样本数, 1, 9, 30])")
 
-    zs = torch.zeros(size=(1, 1, 9, 3))  # 经过自定义网络层的输出大小，要修改
+    zs = torch.zeros(size=(1, 1, 9, 3)).cuda()  # 经过自定义网络层的输出大小，要修改
     for i in range(0, x.shape[0]):
         x1 = t_zscore(x[i, 0, :, :])  # 将样本拆分
         x1 = x1.reshape(1, 1, x1.shape[0], x1.shape[1])  # reshape成可拼接的形状
         zs = torch.vstack((zs, x1))
     return zs[1:, :, :, :]
 
-# d 天以前的 X 值
-def delay(x:Tensor, currentDay, d):
-    """
-    x:(N, 1, 9, 30)
-    d:窗口长度
-    return:返回d天前的X
-    """
-    tempX = torch.zeros((9,1)) # feature, 天数
-    for i in range(x.shape[0]):
-        tempX = torch.cat((tempX, torch.unsqueeze(x[i,0,:,0],dim=1)), dim=1)
-    catX = torch.hstack((tempX, x[-1,0,:,1:]))[:,1:]
-    if currentDay < d:
-        return catX[:,0]
-    else:
-        return catX[:,currentDay-d]
 
 # (X - delay(X, d))/delay(X, d)-1
 def ts_return(x:Tensor, d, stride=10):
-    """
+    """
     x:输入的股票数据
     d:窗口长度
     stride:时间间隔
     return:(X - delay(X, d))/delay(X, d)-1, delay(X,d)为d天前X的值
     """
-    def t_return(aPic:Tensor, num, x=x):
-        """
-        num: 第几张图片
+    def t_return(aPic:Tensor):
+        """ 
         输入为一张图片
-        x为全部图片
         """
-        length = aPic.shape[0]
-        width = aPic.shape[1]
-        res = torch.zeros([length, (width - d) // stride + 1])
-        # col为起始列数
-        index = 0
-        for col in range(0, width - d + 1, stride):
-            currentDay = num + col
-            de = delay(x=x, currentDay=currentDay, d=d)
-            res[:, index] = (aPic[:, col] - de)/de-1
-            index += 1
-        return res
-
-    try:
-        if x.ndim != 4:
-            raise IndexError
-        elif x.shape[1] != 1 or x.shape[2] != 9 or x.shape[3] != 30:
-            raise RuntimeError
-    except IndexError as e1:
-        print(repr(e1), ":请输入4维张量([样本数, 1, 9, 30])")
-    except RuntimeError as e2:
-        print(repr(e2), ":输入张量形状不正确([样本数, 1, 9, 30])")
-
-    re = torch.zeros(size=(1, 1, 9, 3))  # 经过自定义网络层的输出大小，要修改
-    for i in range(0, x.shape[0]):
-        x1 = t_return(x[i, 0, :, :], num=i)  # 将样本拆分
-        x1 = x1.reshape(1, 1, x1.shape[0], x1.shape[1])  # reshape成可拼接的形状
-        re = torch.vstack((re, x1))
-    return re[1:, :, :, :]
+        length = aPic.shape[0]
+        width = aPic.shape[1]
+        res = torch.zeros([length, (width - d) // stride + 1]).cuda()
+        # col为起始列数
+        index = 0
+        for col in range(0, width - d + 1, stride):
+            de = aPic[:, col]
+            res[:, index] = (aPic[:, col + d - 1]- de)/(de+ 10e-8)-1
+            index += 1
+        return res
+    try:
+        if x.ndim != 4:
+            raise IndexError
+        elif x.shape[1] != 1 or x.shape[2] != 9 or x.shape[3] != 30:
+            raise RuntimeError
+    except IndexError as e1:
+        print(repr(e1), ":请输入4维张量([样本数, 1, 9, 30])")
+    except RuntimeError as e2:
+        print(repr(e2), ":输入张量形状不正确([样本数, 1, 9, 30])")
+        
+    re = torch.zeros(size=(1, 1, 9, 3)).cuda() #经过自定义网络层的输出大小，要修改
+    for i in range(0, x.shape[0]):
+        x1 = t_return(x[i, 0, :, :])#将样本拆分
+        x1 = x1.reshape(1, 1, x1.shape[0], x1.shape[1])#reshape成可拼接的形状
+        re = torch.vstack((re, x1))
+    return re[1:, :, :, :]
 
 # 过去 d 天 X 值构成的时序数列的加权平均值
 # 权数为 d, d – 1, …, 1(权数之和应为 1，需进行归一化处理)，其中离现在越近的日子权数越大
@@ -262,9 +242,9 @@ def ts_decaylinear(x:Tensor, d, stride=10):
         """
         length = aPic.shape[0]
         width = aPic.shape[1]
-        weight = torch.Tensor([w for w in range(d, 0, -1)]).to(torch.float)
+        weight = torch.Tensor([w for w in range(d, 0, -1)]).to(torch.float).cuda()
         weight = weight / torch.sum(weight)
-        dl = torch.zeros([length, (width - d) // stride + 1])
+        dl = torch.zeros([length, (width - d) // stride + 1]).cuda()
         # col为起始列数
         index = 0
         for col in range(0, width - d + 1, stride):
@@ -283,7 +263,7 @@ def ts_decaylinear(x:Tensor, d, stride=10):
     except RuntimeError as e2:
         print(repr(e2), ":输入张量形状不正确([样本数, 1, 9, 30])")
 
-    de = torch.zeros(size=(1, 1, 9, 3))  # 经过自定义网络层的输出大小，要修改
+    de = torch.zeros(size=(1, 1, 9, 3)).cuda()  # 经过自定义网络层的输出大小，要修改
     for i in range(0, x.shape[0]):
         x1 = t_decaylinear(x[i, 0, :, :])  # 将样本拆分
         x1 = x1.reshape(1, 1, x1.shape[0], x1.shape[1])  # reshape成可拼接的形状
@@ -295,7 +275,7 @@ def cat2(x, y):
     连接两个形状不同的张量，尺寸小的张量以0填充
     """
     # x多的，y少的
-    a = torch.zeros(size=(y.shape[0], y.shape[1], x.shape[2] - y.shape[2], y.shape[3]))
+    a = torch.zeros(size=(y.shape[0], y.shape[1], x.shape[2] - y.shape[2], y.shape[3])).cuda()
     a = torch.cat((y, a), dim=2)
     return a
 
@@ -341,45 +321,21 @@ class Pool2d(nn.Module):
         return torch.stack((ts_mean, ts_max, ts_min), dim=1)
 
 
-class InceptionA(nn.Module):
-    """
-    输入展平层前的汇总特征
-    """
-    def __init__(self):
-        super(InceptionA, self).__init__()
-
-        self.branch1 = nn.Sequential(
-            feature_catch(d=10, stride=10),
-            nn.BatchNorm2d(6),
-            nn.Flatten()
-        )
-
-        self.branch2 = nn.Sequential(
-            feature_catch(d=10, stride=10),
-            nn.BatchNorm2d(6),
-            Pool2d(d=3, stride=10),
-            nn.BatchNorm3d(3),
-            nn.Flatten()
-        )
-
-    def forward(self, x):
-        branch1 = self.branch1(x)
-        branch2 = self.branch2(x)
-        return torch.cat((branch1, branch2), dim=1)
-
 class catFeature(nn.Module):
     """
-    单独拆分出特征提取层后的汇总层
+    输入展平层前的汇总特征
     """
     def __init__(self):
         super(catFeature, self).__init__()
 
         self.branch1 = nn.Sequential(
+            # feature_catch(d=10, stride=10),
             nn.BatchNorm2d(6),
             nn.Flatten()
         )
 
         self.branch2 = nn.Sequential(
+            # feature_catch(d=10, stride=10),
             nn.BatchNorm2d(6),
             Pool2d(d=3, stride=10),
             nn.BatchNorm3d(3),
@@ -398,3 +354,25 @@ def init_weights(m):
     """
     if type(m) == nn.Linear:
         nn.init.trunc_normal_(m.weight)
+        
+alphanet1 = nn.Sequential(
+    catFeature(),
+    nn.Flatten(),
+    nn.Linear(648*2, 30),  
+    nn.Dropout(0.5),
+    nn.ELU(),
+    nn.Linear(30, 1),
+)
+
+alphanet2 = nn.Sequential(
+    catFeature(),
+    nn.Flatten(),
+    nn.Linear(648*2, 600), 
+    # nn.Dropout(0.5),
+    nn.ELU(),
+    nn.Linear(600, 30), 
+    nn.ELU(),
+    # nn.Linear(60, 30), 
+    # nn.ELU(),
+    nn.Linear(30, 1),
+)
